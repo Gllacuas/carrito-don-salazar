@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrar Venta — Carrito Don Salazar</title>
+<style>
+  :root {
+    --cafe:   #4A2C17;
+    --dorado: #C8922A;
+    --crema:  #FDF6EC;
+    --crema2: #F5E8D0;
+    --gris:   #F4F4F4;
+    --texto:  #1A1A1A;
+    --error:  #C62828;
+    --ok:     #2E7D32;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    background: var(--gris);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 16px 40px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    width: 100%;
+    background: var(--cafe);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+  .header-left  { display: flex; align-items: center; gap: 12px; }
+  .header-icon  { font-size: 1.8rem; }
+  .header-title { color: var(--dorado); font-size: 1.1rem; font-weight: 700; }
+  .header-sub   { color: #C8A882; font-size: .75rem; margin-top: 2px; }
+  .header-link  {
+    color: var(--dorado);
+    font-size: .8rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid var(--dorado);
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: background .2s;
+  }
+  .header-link:hover { background: var(--dorado); color: var(--cafe); }
+
+  /* ── CARD ── */
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 36px 40px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.09);
+  }
+  .card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--cafe);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-sub {
+    font-size: .82rem;
+    color: #888;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--crema2);
+  }
+
+  /* ── FORM ── */
+  .field { margin-bottom: 20px; }
+  label {
+    display: block;
+    font-size: .78rem;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 7px;
+  }
+  label .req { color: var(--dorado); margin-left: 2px; }
+  input, select, textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid #E0E0E0;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-family: Arial, sans-serif;
+    color: var(--texto);
+    background: white;
+    transition: border-color .2s, box-shadow .2s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--dorado);
+    box-shadow: 0 0 0 3px rgba(200,146,42,.12);
+  }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .monto-wrap { position: relative; }
+  .monto-wrap input { padding-left: 38px; }
+  .monto-prefix {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 700;
+    color: #888;
+    font-size: .9rem;
+    pointer-events: none;
+  }
+  .hint { font-size: .74rem; color: #AAA; margin-top: 5px; font-style: italic; }
+
+  /* ── TURNO SELECTOR ── */
+  .turno-group { display: flex; gap: 12px; }
+  .turno-btn {
+    flex: 1;
+    padding: 11px;
+    border: 1.5px solid #E0E0E0;
+    border-radius: 8px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all .2s;
+    background: white;
+    color: #888;
+  }
+  .turno-btn.am.selected { border-color: #1565C0; background: #E3F2FD; color: #1565C0; }
+  .turno-btn.pm.selected { border-color: #880E4F; background: #FCE4EC; color: #880E4F; }
+  .turno-btn:not(.selected):hover { border-color: #CCC; background: var(--gris); }
+  input[name="turno"] { display: none; }
+
+  /* ── SUBMIT ── */
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--cafe);
+    color: var(--dorado);
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: Arial, sans-serif;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background .2s, transform .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-submit:hover  { background: #6B3E26; }
+  .btn-submit:active { transform: scale(.98); }
+  .btn-submit:disabled { background: #CCC; color: white; cursor: not-allowed; }
+
+  /* ── ALERT ── */
+  .alert {
+    display: none;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: .88rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    align-items: center;
+    gap: 10px;
+  }
+  .alert.show { display: flex; }
+  .alert.ok    { background: #E8F5E9; color: var(--ok); border: 1px solid #A5D6A7; }
+  .alert.error { background: #FFEBEE; color: var(--error); border: 1px solid #FFCDD2; }
+
+  /* ── HISTORIAL ── */
+  .historial-toggle {
+    width: 100%;
+    max-width: 520px;
+    margin-top: 20px;
+    text-align: center;
+  }
+  .btn-hist {
+    background: white;
+    border: 1.5px solid #E0E0E0;
+    border-radius: 8px;
+    padding: 9px 20px;
+    font-size: .85rem;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-hist:hover { border-color: var(--dorado); color: var(--cafe); }
+  .historial {
+    display: none;
+    width: 100%;
+    max-width: 520px;
+    margin-top: 14px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.07);
+    overflow: hidden;
+  }
+  .historial.open { display: block; }
+  .hist-header {
+    background: var(--cafe);
+    color: var(--dorado);
+    padding: 12px 18px;
+    font-size: .82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+  }
+  .hist-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  .hist-table th {
+    background: var(--crema2);
+    padding: 8px 12px;
+    text-align: left;
+    font-size: .72rem;
+    text-transform: uppercase;
+    color: #777;
+    font-weight: 700;
+  }
+  .hist-table td { padding: 9px 12px; border-bottom: 1px solid #F5F5F5; }
+  .hist-table tr:last-child td { border-bottom: none; }
+  .hist-table tr:hover td { background: var(--crema); }
+  .num { text-align: right; font-weight: 600; }
+  .tag-am { background: #E3F2FD; color: #1565C0; padding: 2px 7px; border-radius: 8px; font-size: .7rem; font-weight: 700; }
+  .tag-pm { background: #FCE4EC; color: #880E4F; padding: 2px 7px; border-radius: 8px; font-size: .7rem; font-weight: 700; }
+  .loading { text-align: center; padding: 20px; color: #AAA; font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">🛒</div>
+    <div>
+      <div class="header-title">CARRITO DON SALAZAR</div>
+      <div class="header-sub">Registro de Ventas Diarias</div>
+    </div>
+  </div>
+  <a href="/" class="header-link">📊 Ver Dashboard</a>
+</div>
+
+<!-- FORM CARD -->
+<div class="card">
+  <div class="card-title">📝 Registrar Venta del Turno</div>
+  <div class="card-sub">Completa los datos al cerrar cada turno. El dashboard se actualiza automáticamente.</div>
+
+  <div id="alert" class="alert"></div>
+
+  <form id="ventaForm" onsubmit="submitVenta(event)">
+
+    <div class="field">
+      <label>Fecha <span class="req">*</span></label>
+      <input type="date" name="fecha" id="fecha" required>
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label>Responsable <span class="req">*</span></label>
+        <select name="responsable" required>
+          <option value="">Seleccionar...</option>
+          <option value="Maik">Maik</option>
+          <option value="Adrian">Adrian</option>
+          <option value="Andres">Andres</option>
+          <option value="Ale">Ale</option>
+          <option value="Kyle">Kyle</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Turno <span class="req">*</span></label>
+        <div class="turno-group">
+          <div class="turno-btn am" onclick="selectTurno('AM')">☀️ AM</div>
+          <div class="turno-btn pm" onclick="selectTurno('PM')">🌙 PM</div>
+        </div>
+        <input type="hidden" name="turno" id="turnoInput" required>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label>Monto VISA (S/) <span class="req">*</span></label>
+        <div class="monto-wrap">
+          <span class="monto-prefix">S/</span>
+          <input type="number" name="visa" id="visa" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="field">
+        <label>Efectivo (S/)</label>
+        <div class="monto-wrap">
+          <span class="monto-prefix">S/</span>
+          <input type="number" name="efectivo" id="efectivo" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div class="hint">Solo si hubo pago en efectivo</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Total calculado</label>
+      <input type="text" id="totalDisplay" readonly
+             style="background:var(--crema);font-weight:700;color:var(--cafe);font-size:1.1rem"
+             value="S/ 0.00">
+    </div>
+
+    <div class="field">
+      <label>Nota (opcional)</label>
+      <textarea name="nota" rows="2" placeholder="Ej: Pedido especial, incidencia, etc."></textarea>
+    </div>
+
+    <button type="submit" class="btn-submit" id="btnSubmit">
+      ✅ Guardar Venta
+    </button>
+  </form>
+</div>
+
+<!-- HISTORIAL -->
+<div class="historial-toggle">
+  <button class="btn-hist" onclick="toggleHistorial()">📋 Ver registros del día</button>
+</div>
+<div class="historial" id="historial">
+  <div class="hist-header">Registros de hoy</div>
+  <div id="histContent" class="loading">Cargando...</div>
+</div>
+
+<script>
+// ── Turno selector ────────────────────────────────────────────────────────
+function selectTurno(t) {
+  document.querySelectorAll('.turno-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector(`.turno-btn.${t.toLowerCase()}`).classList.add('selected');
+  document.getElementById('turnoInput').value = t;
+}
+
+// ── Total en tiempo real ──────────────────────────────────────────────────
+['visa','efectivo'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateTotal);
+});
+function updateTotal() {
+  const v = parseFloat(document.getElementById('visa').value)     || 0;
+  const e = parseFloat(document.getElementById('efectivo').value) || 0;
+  document.getElementById('totalDisplay').value = `S/ ${(v+e).toFixed(2)}`;
+}
+
+// Fecha por defecto = hoy
+const hoy = new Date();
+const ymd  = hoy.toISOString().slice(0,10);
+document.getElementById('fecha').value = ymd;
+
+// ── Submit ────────────────────────────────────────────────────────────────
+async function submitVenta(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnSubmit');
+  const alertEl = document.getElementById('alert');
+  const form = e.target;
+
+  // Validar turno
+  if (!document.getElementById('turnoInput').value) {
+    showAlert('error', '⚠️ Selecciona el turno AM o PM.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Guardando...';
+
+  const body = {
+    fecha:       form.fecha.value,
+    responsable: form.responsable.value,
+    turno:       form.turno.value,
+    visa:        form.visa.value   || '0',
+    efectivo:    form.efectivo.value || '0',
+    nota:        form.nota.value,
+  };
+
+  try {
+    const r = await fetch('/api/ventas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+
+    if (!r.ok) throw new Error(data.error || 'Error al guardar.');
+
+    showAlert('ok', `✅ Venta guardada correctamente para ${body.responsable} · ${body.turno}`);
+    form.reset();
+    document.getElementById('fecha').value = ymd;
+    document.getElementById('totalDisplay').value = 'S/ 0.00';
+    document.querySelectorAll('.turno-btn').forEach(b => b.classList.remove('selected'));
+    loadHistorial();
+
+  } catch(err) {
+    showAlert('error', `❌ ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✅ Guardar Venta';
+  }
+}
+
+function showAlert(type, msg) {
+  const el = document.getElementById('alert');
+  el.textContent = msg;
+  el.className = `alert show ${type}`;
+  el.style.display = 'flex';
+  setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+// ── Historial del día ─────────────────────────────────────────────────────
+let histOpen = false;
+async function toggleHistorial() {
+  histOpen = !histOpen;
+  document.getElementById('historial').classList.toggle('open', histOpen);
+  if (histOpen) loadHistorial();
+}
+
+async function loadHistorial() {
+  const el = document.getElementById('histContent');
+  el.innerHTML = '<div class="loading">Cargando...</div>';
+  try {
+    const r = await fetch('/api/ventas');
+    const { entries } = await r.json();
+    const hoyStr = ymd;
+    const hoyEntries = entries.filter(e => e.fecha === hoyStr);
+
+    if (!hoyEntries.length) {
+      el.innerHTML = '<div class="loading">Sin registros para hoy.</div>';
+      return;
+    }
+
+    let html = `<table class="hist-table">
+      <thead><tr><th>Responsable</th><th>Turno</th><th>VISA</th><th>Efectivo</th><th>Total</th></tr></thead>
+      <tbody>`;
+    hoyEntries.forEach(e => {
+      const tag = e.turno === 'AM'
+        ? '<span class="tag-am">AM</span>'
+        : '<span class="tag-pm">PM</span>';
+      html += `<tr>
+        <td><strong>${e.responsable}</strong></td>
+        <td>${tag}</td>
+        <td class="num">S/ ${e.visa.toFixed(2)}</td>
+        <td class="num">S/ ${e.efectivo.toFixed(2)}</td>
+        <td class="num"><strong>S/ ${e.total.toFixed(2)}</strong></td>
+      </tr>`;
+    });
+    const totalHoy = hoyEntries.reduce((s,e) => s + e.total, 0);
+    html += `<tr style="background:var(--cafe);color:var(--dorado)">
+      <td colspan="4"><strong>TOTAL HOY</strong></td>
+      <td class="num"><strong>S/ ${totalHoy.toFixed(2)}</strong></td>
+    </tr></tbody></table>`;
+    el.innerHTML = html;
+  } catch {
+    el.innerHTML = '<div class="loading" style="color:red">Error al cargar historial.</div>';
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carrito Don Salazar — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --cafe:   #4A2C17; --cafe2: #6B3E26;
+    --dorado: #C8922A; --dorado2: #E0A83A;
+    --crema:  #FDF6EC; --crema2: #F5E8D0;
+    --gris:   #F4F4F4; --texto: #1A1A1A; --suave: #888888;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: var(--gris); color: var(--texto); }
+
+  .header {
+    background: var(--cafe); padding: 18px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 12px rgba(0,0,0,.35);
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-icon { font-size: 2rem; }
+  .header-title { color: var(--dorado); font-size: 1.25rem; font-weight: 700; line-height: 1.2; }
+  .header-sub   { color: #C8A882; font-size: .78rem; margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .refresh-badge {
+    font-size: .72rem; color: #C8A882;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #4CAF50; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .btn-form {
+    background: var(--dorado); color: var(--cafe);
+    font-weight: 700; font-size: .82rem; padding: 8px 16px;
+    border-radius: 8px; text-decoration: none; transition: background .2s;
+  }
+  .btn-form:hover { background: var(--dorado2); }
+
+  .kpi-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 16px; padding: 20px 32px 8px;
+  }
+  .kpi-card {
+    background: white; border-radius: 12px; padding: 18px 20px;
+    border-left: 5px solid var(--dorado);
+    box-shadow: 0 2px 8px rgba(0,0,0,.07); transition: transform .15s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); }
+  .kpi-label { font-size: .72rem; color: var(--suave); font-weight: 600; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+  .kpi-value { font-size: 1.75rem; font-weight: 700; color: var(--cafe); line-height: 1; }
+  .kpi-sub   { font-size: .76rem; color: var(--suave); margin-top: 4px; font-style: italic; }
+  .kpi-card.gold  { border-left-color: var(--dorado); }
+  .kpi-card.cafe  { border-left-color: var(--cafe); }
+  .kpi-card.green { border-left-color: #2E7D32; }
+  .kpi-card.red   { border-left-color: #C62828; }
+
+  .nav-wrapper { padding: 16px 32px 0; }
+  .nav-tabs {
+    display: inline-flex; background: white; border-radius: 10px;
+    padding: 5px; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+  .nav-btn {
+    padding: 9px 22px; border-radius: 7px; border: none; cursor: pointer;
+    font-size: .88rem; font-weight: 600; font-family: Arial, sans-serif;
+    color: var(--suave); background: transparent; transition: all .2s;
+  }
+  .nav-btn:hover  { background: var(--crema2); color: var(--cafe); }
+  .nav-btn.active { background: var(--cafe); color: var(--dorado); box-shadow: 0 2px 8px rgba(74,44,23,.3); }
+
+  .panel { display: none; padding: 20px 32px 32px; animation: fadeIn .25s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+  .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  .chart-card {
+    background: white; border-radius: 12px; padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  }
+  .chart-card h3 {
+    font-size: .85rem; color: var(--suave); font-weight: 600;
+    text-transform: uppercase; letter-spacing: .7px; margin-bottom: 14px;
+  }
+  .chart-wrap { position: relative; width: 100%; }
+
+  .rank-table { width: 100%; border-collapse: collapse; }
+  .rank-table th {
+    background: var(--cafe); color: var(--dorado);
+    font-size: .78rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .6px; padding: 10px 14px; text-align: left;
+  }
+  .rank-table th:last-child { text-align: right; }
+  .rank-table td { padding: 11px 14px; font-size: .9rem; border-bottom: 1px solid #F0F0F0; }
+  .rank-table tr:nth-child(even) td { background: var(--crema); }
+  .rank-table tr:hover td { background: var(--crema2); }
+  .rank-table .total-row td { background: var(--cafe); color: var(--dorado); font-weight: 700; border: none; }
+
+  .prog-bar  { width:100%; background:var(--crema2); border-radius:4px; height:8px; margin-top:4px; }
+  .prog-fill { height:8px; border-radius:4px; background: linear-gradient(90deg, var(--cafe), var(--dorado)); }
+
+  .detail-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  .detail-table th {
+    background:var(--dorado); color:white; padding:8px 12px;
+    text-align:left; font-weight:700; font-size:.78rem;
+    text-transform:uppercase; letter-spacing:.5px;
+  }
+  .detail-table td { padding:8px 12px; border-bottom:1px solid #EEE; }
+  .detail-table tr:nth-child(even) td { background:var(--crema); }
+  .detail-table .num { text-align:right; font-weight:600; }
+  .tag-am { background:#E3F2FD; color:#1565C0; padding:2px 8px; border-radius:10px; font-size:.75rem; font-weight:700; }
+  .tag-pm { background:#FCE4EC; color:#880E4F; padding:2px 8px; border-radius:10px; font-size:.75rem; font-weight:700; }
+
+  .week-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+  .week-card {
+    background:white; border-radius:12px; padding:18px; text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.07); border-top:4px solid var(--dorado);
+  }
+  .week-card.best { border-top-color:var(--cafe); background:var(--crema); }
+  .week-label { font-size:.72rem; color:var(--suave); font-weight:600; text-transform:uppercase; letter-spacing:.7px; }
+  .week-value { font-size:1.5rem; font-weight:700; color:var(--cafe); margin:6px 0 2px; }
+  .week-badge { font-size:.72rem; color:var(--dorado); font-weight:700; }
+
+  .colab-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .colab-card {
+    background:white; border-radius:12px; padding:18px 20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.07); border-left:4px solid var(--dorado);
+  }
+  .colab-card.top1 { border-left-color:#FFD700; background:#FFFDE7; }
+  .colab-card.top2 { border-left-color:#C0C0C0; }
+  .colab-card.top3 { border-left-color:#CD7F32; }
+  .colab-name  { font-size:1rem; font-weight:700; color:var(--cafe); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .colab-total { font-size:1.4rem; font-weight:700; color:var(--cafe); }
+  .colab-pct   { font-size:.8rem; color:var(--suave); margin-bottom:8px; }
+  .colab-shifts{ font-size:.78rem; color:var(--suave); margin-top:6px; }
+
+  .footer {
+    text-align:center; padding:16px; font-size:.72rem; color:#BBB;
+    border-top:1px solid #EEE; margin-top:20px; background:white;
+  }
+
+  /* Loading / empty states */
+  .spinner { display:flex; align-items:center; justify-content:center; padding:40px; gap:12px; color:#999; font-size:.9rem; }
+  .spin { width:24px; height:24px; border:3px solid #EEE; border-top-color:var(--dorado); border-radius:50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .empty { text-align:center; padding:40px; color:#BBB; font-size:.9rem; }
+
+  @media (max-width:900px) {
+    .kpi-row,.two-col,.three-col,.week-cards,.colab-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">🛒</div>
+    <div>
+      <div class="header-title">CARRITO DON SALAZAR</div>
+      <div class="header-sub">Dashboard de Ventas · <span id="mesLabel">—</span></div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="refresh-badge"><div class="dot"></div> <span id="lastUpdate">Actualizando...</span></div>
+    <a href="/entrada" class="btn-form">➕ Registrar Venta</a>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-row">
+  <div class="kpi-card gold">
+    <div class="kpi-label">Venta Total</div>
+    <div class="kpi-value" id="kpiTotal">—</div>
+    <div class="kpi-sub" id="kpiTotalSub">—</div>
+  </div>
+  <div class="kpi-card cafe">
+    <div class="kpi-label">Top Vendedor</div>
+    <div class="kpi-value" id="kpiTop">—</div>
+    <div class="kpi-sub" id="kpiTopSub">—</div>
+  </div>
+  <div class="kpi-card green">
+    <div class="kpi-label">Mejor Día</div>
+    <div class="kpi-value" id="kpiBest">—</div>
+    <div class="kpi-sub" id="kpiBestSub">—</div>
+  </div>
+  <div class="kpi-card red">
+    <div class="kpi-label">Prom. por Día Activo</div>
+    <div class="kpi-value" id="kpiProm">—</div>
+    <div class="kpi-sub" id="kpiPromSub">—</div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav-wrapper">
+  <div class="nav-tabs">
+    <button class="nav-btn active" onclick="showPanel('colab',this)">👤 Colaboradores</button>
+    <button class="nav-btn" onclick="showPanel('diario',this)">📅 Tendencia Diaria</button>
+    <button class="nav-btn" onclick="showPanel('semanal',this)">📆 Resumen Semanal</button>
+    <button class="nav-btn" onclick="showPanel('detalle',this)">📋 Detalle de Turnos</button>
+  </div>
+</div>
+
+<!-- PANEL COLABORADORES -->
+<div id="panel-colab" class="panel active">
+  <div class="two-col" style="margin-top:4px">
+    <div class="chart-card">
+      <h3>🏆 Ranking de Ventas</h3>
+      <div id="rankingTable"><div class="spinner"><div class="spin"></div> Cargando...</div></div>
+    </div>
+    <div class="chart-card">
+      <h3>📊 Distribución por Colaborador</h3>
+      <div class="chart-wrap" style="height:280px"><canvas id="chartDonut"></canvas></div>
+    </div>
+  </div>
+  <div class="colab-grid" id="colabCards" style="margin-top:20px"></div>
+</div>
+
+<!-- PANEL DIARIO -->
+<div id="panel-diario" class="panel">
+  <div class="chart-card">
+    <h3>📈 Ventas por Día</h3>
+    <div class="chart-wrap" style="height:320px"><canvas id="chartLine"></canvas></div>
+  </div>
+  <div class="two-col" style="margin-top:20px">
+    <div class="chart-card">
+      <h3>📊 Comparativa Diaria</h3>
+      <div class="chart-wrap" style="height:260px"><canvas id="chartBarDay"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>📋 Resumen por Día</h3>
+      <div id="dailyTable"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL SEMANAL -->
+<div id="panel-semanal" class="panel">
+  <div class="week-cards" id="weekCards"></div>
+  <div class="two-col">
+    <div class="chart-card">
+      <h3>📊 Ventas por Semana</h3>
+      <div class="chart-wrap" style="height:280px"><canvas id="chartWeekBar"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>🍩 Distribución Semanal</h3>
+      <div class="chart-wrap" style="height:280px"><canvas id="chartWeekDonut"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL DETALLE -->
+<div id="panel-detalle" class="panel">
+  <div class="chart-card">
+    <h3>📋 Registro Completo de Turnos</h3>
+    <div id="detalleTable"></div>
+  </div>
+</div>
+
+<div class="footer" id="footer">Don Salazar Coffee · Carrito Oficinas · Cargando datos...</div>
+
+<script>
+const CAFE='#4A2C17',DORADO='#C8922A';
+const COLORES=['#4A2C17','#C8922A','#8B5E3C','#E0A83A','#A67C52','#D4956A'];
+let charts={};
+let allEntries=[];
+
+// ── NAV ──────────────────────────────────────────────────────────────────
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+// ── FETCH + RENDER ────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const r = await fetch('/api/ventas');
+    if(!r.ok) throw new Error('Error '+r.status);
+    const { entries } = await r.json();
+    allEntries = entries.filter(e => e.fecha && e.responsable);
+    render(allEntries);
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent =
+      'Actualizado ' + now.toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit'});
+  } catch(err) {
+    document.getElementById('lastUpdate').textContent = 'Error al cargar datos';
+    console.error(err);
+  }
+}
+
+function fmt(n) { return 'S/ '+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function fmtShort(n) { return 'S/ '+n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+
+// ── MAIN RENDER ───────────────────────────────────────────────────────────
+function render(entries) {
+  if(!entries.length) {
+    document.getElementById('kpiTotal').textContent = 'S/ 0.00';
+    document.getElementById('kpiTotalSub').textContent = 'Sin registros aún';
+    return;
+  }
+
+  // ── Totales por colaborador
+  const byColab = {};
+  entries.forEach(e => {
+    if(!byColab[e.responsable]) byColab[e.responsable] = { total:0, turnos:[] };
+    byColab[e.responsable].total += e.total;
+    byColab[e.responsable].turnos.push(e);
+  });
+  const ranking = Object.entries(byColab)
+    .map(([name,d])=>({name,total:d.total,turnos:d.turnos}))
+    .sort((a,b)=>b.total-a.total);
+  const grandTotal = ranking.reduce((s,r)=>s+r.total,0);
+
+  // ── Totales por día
+  const byDay = {};
+  entries.forEach(e => {
+    byDay[e.fecha] = (byDay[e.fecha]||0) + e.total;
+  });
+  const days = Object.entries(byDay).sort(([a],[b])=>a.localeCompare(b));
+  const bestDay = days.reduce((mx,d)=>d[1]>mx[1]?d:mx, ['',0]);
+  const diasActivos = days.length;
+  const prom = diasActivos ? grandTotal/diasActivos : 0;
+
+  // ── Mes label
+  if(entries.length) {
+    const d = new Date(entries[0].fecha+'T12:00:00');
+    document.getElementById('mesLabel').textContent =
+      d.toLocaleString('es-PE',{month:'long',year:'numeric'});
+  }
+
+  // ── KPIs
+  document.getElementById('kpiTotal').textContent = fmt(grandTotal);
+  document.getElementById('kpiTotalSub').textContent =
+    `${entries.length} registros · ${diasActivos} días con operación`;
+
+  document.getElementById('kpiTop').textContent = '⭐ '+ranking[0].name;
+  document.getElementById('kpiTopSub').textContent =
+    `${fmt(ranking[0].total)} · ${(ranking[0].total/grandTotal*100).toFixed(1)}% del total`;
+
+  document.getElementById('kpiBest').textContent = fmt(bestDay[1]);
+  document.getElementById('kpiBestSub').textContent = bestDay[0]
+    ? new Date(bestDay[0]+'T12:00:00').toLocaleDateString('es-PE',{day:'numeric',month:'long'})
+    : '—';
+
+  document.getElementById('kpiProm').textContent = fmt(prom);
+  document.getElementById('kpiPromSub').textContent = `${diasActivos} días activos`;
+
+  // ── PANEL: COLABORADORES
+  renderRanking(ranking, grandTotal);
+  renderDonut(ranking);
+  renderColabCards(ranking, grandTotal);
+
+  // ── PANEL: DIARIO
+  renderDaily(days);
+
+  // ── PANEL: SEMANAL
+  renderWeekly(days, entries);
+
+  // ── PANEL: DETALLE
+  renderDetalle(entries);
+
+  // ── Footer
+  document.getElementById('footer').textContent =
+    `Don Salazar Coffee · Carrito Oficinas · ${grandTotal.toFixed(2)} total registrado · ${new Date().toLocaleDateString('es-PE')}`;
+}
+
+// ── RANKING TABLE ─────────────────────────────────────────────────────────
+function renderRanking(ranking, total) {
+  const medals = ['🥇','🥈','🥉'];
+  let html = `<table class="rank-table">
+    <thead><tr><th>#</th><th>Colaborador</th><th>Total</th><th style="text-align:right">%</th></tr></thead>
+    <tbody>`;
+  ranking.forEach((r,i) => {
+    const pct = r.total/total*100;
+    const bar = (r.total/ranking[0].total*100).toFixed(1);
+    html += `<tr>
+      <td>${medals[i]||((i+1)+'°')}</td>
+      <td>${i===0?'<strong>'+r.name+'</strong>':r.name}
+        <div class="prog-bar"><div class="prog-fill" style="width:${bar}%"></div></div></td>
+      <td>${i===0?'<strong>'+fmt(r.total)+'</strong>':fmt(r.total)}</td>
+      <td style="text-align:right${i===0?';font-weight:700':''}">${pct.toFixed(1)}%</td>
+    </tr>`;
+  });
+  html += `<tr class="total-row"><td colspan="2">TOTAL</td>
+    <td>${fmt(total)}</td><td style="text-align:right">100%</td></tr></tbody></table>`;
+  document.getElementById('rankingTable').innerHTML = html;
+}
+
+// ── DONUT ─────────────────────────────────────────────────────────────────
+function renderDonut(ranking) {
+  if(charts.donut) charts.donut.destroy();
+  const total = ranking.reduce((s,r)=>s+r.total,0);
+  charts.donut = new Chart(document.getElementById('chartDonut'),{
+    type:'doughnut',
+    data:{
+      labels: ranking.map(r=>r.name),
+      datasets:[{ data:ranking.map(r=>r.total),
+        backgroundColor:COLORES.slice(0,ranking.length),
+        borderColor:'white', borderWidth:3, hoverOffset:6 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:12},padding:14}},
+        tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)} (${(ctx.raw/total*100).toFixed(1)}%)`}}
+      },
+      cutout:'62%'
+    }
+  });
+}
+
+// ── COLAB CARDS ───────────────────────────────────────────────────────────
+function renderColabCards(ranking, total) {
+  const cls = ['top1','top2','top3','','',''];
+  const medals = ['🥇','🥈','🥉'];
+  let html = '';
+  ranking.forEach((r,i) => {
+    const pct = (r.total/total*100).toFixed(1);
+    const bar = (r.total/ranking[0].total*100).toFixed(1);
+    const shifts = r.turnos.map(t=>`${t.fecha.slice(5).replace('-','/')} ${t.turno}`).join(' · ');
+    html += `<div class="colab-card ${cls[i]||''}">
+      <div class="colab-name">${medals[i]?`<span>${medals[i]}</span>`:''} ${r.name}</div>
+      <div class="colab-total">${fmt(r.total)}</div>
+      <div class="colab-pct">${pct}% del total del período</div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${bar}%"></div></div>
+      <div class="colab-shifts">Turnos: ${shifts}</div>
+    </div>`;
+  });
+  document.getElementById('colabCards').innerHTML = html;
+}
+
+// ── DAILY CHARTS + TABLE ──────────────────────────────────────────────────
+function renderDaily(days) {
+  const labels = days.map(([d])=>{
+    const [,m,dd]=d.split('-'); return `${dd}/${m}`;
+  });
+  const values = days.map(([,v])=>v);
+  const maxVal = Math.max(...values);
+
+  if(charts.line) charts.line.destroy();
+  charts.line = new Chart(document.getElementById('chartLine'),{
+    type:'line',
+    data:{labels,datasets:[{
+      label:'Ventas (S/)', data:values,
+      borderColor:CAFE, backgroundColor:'rgba(74,44,23,0.08)',
+      borderWidth:3,
+      pointBackgroundColor:DORADO, pointBorderColor:CAFE,
+      pointRadius:7, pointHoverRadius:9,
+      tension:0.35, fill:true
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)}`}}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'#F0F0F0'},ticks:{callback:v=>'S/ '+v}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+
+  if(charts.barDay) charts.barDay.destroy();
+  charts.barDay = new Chart(document.getElementById('chartBarDay'),{
+    type:'bar',
+    data:{labels,datasets:[{
+      label:'Ventas (S/)', data:values,
+      backgroundColor:values.map(v=>v===maxVal?DORADO:CAFE+'CC'),
+      borderRadius:6, borderSkipped:false
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'#F0F0F0'},ticks:{callback:v=>'S/ '+v}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+
+  // Table
+  let html = `<table class="detail-table" style="font-size:.84rem">
+    <thead><tr><th>Fecha</th><th style="text-align:right">Venta (S/)</th></tr></thead><tbody>`;
+  days.forEach(([d,v]) => {
+    const [,m,dd]=d.split('-');
+    const isMax = v===maxVal;
+    const isMin = v===Math.min(...values);
+    html += `<tr><td>${dd}/${m}</td>
+      <td class="num" style="${isMax?'color:#2E7D32;font-weight:800':isMin?'color:#C62828':''}">${fmt(v)}${isMax?' 🔝':isMin?' ↓':''}</td></tr>`;
+  });
+  const tot = days.reduce((s,[,v])=>s+v,0);
+  html += `<tr style="background:var(--cafe);color:var(--dorado);font-weight:700">
+    <td>TOTAL</td><td class="num" style="color:var(--dorado)">${fmt(tot)}</td>
+  </tr></tbody></table>`;
+  document.getElementById('dailyTable').innerHTML = html;
+}
+
+// ── WEEKLY ────────────────────────────────────────────────────────────────
+function renderWeekly(days, entries) {
+  // Agrupar por semana ISO
+  const byWeek = {};
+  entries.forEach(e => {
+    const d = new Date(e.fecha+'T12:00:00');
+    const year = d.getFullYear();
+    const start = new Date(d); start.setDate(d.getDate()-d.getDay()+1);
+    const key = start.toISOString().slice(0,10);
+    if(!byWeek[key]) byWeek[key]={total:0,days:new Set()};
+    byWeek[key].total += e.total;
+    byWeek[key].days.add(e.fecha);
+  });
+  const weeks = Object.entries(byWeek).sort(([a],[b])=>a.localeCompare(b));
+  const weekTotal = weeks.reduce((s,[,v])=>s+v.total,0);
+  const maxWeek = Math.max(...weeks.map(([,v])=>v.total));
+
+  // Cards
+  let cardsHtml = '';
+  weeks.forEach(([start,v],i) => {
+    const d = new Date(start+'T12:00:00');
+    const end = new Date(d); end.setDate(d.getDate()+4);
+    const label = `${d.getDate()}/${d.getMonth()+1} – ${end.getDate()}/${end.getMonth()+1}`;
+    const isBest = v.total===maxWeek;
+    cardsHtml += `<div class="week-card${isBest?' best':''}">
+      <div class="week-label">${isBest?'🏆 ':''} Semana ${i+1} · ${label}</div>
+      <div class="week-value">${fmt(v.total)}</div>
+      <div class="week-badge">${v.days.size} día${v.days.size>1?'s':''} activo${v.days.size>1?'s':''}</div>
+    </div>`;
+  });
+  document.getElementById('weekCards').innerHTML = cardsHtml;
+
+  // Bar chart
+  const wLabels = weeks.map(([s],i)=>`Sem ${i+1}`);
+  const wVals   = weeks.map(([,v])=>v.total);
+  if(charts.weekBar) charts.weekBar.destroy();
+  charts.weekBar = new Chart(document.getElementById('chartWeekBar'),{
+    type:'bar',
+    data:{labels:wLabels,datasets:[{
+      label:'Ventas (S/)', data:wVals,
+      backgroundColor:wVals.map(v=>v===maxWeek?DORADO:CAFE+'CC'),
+      borderRadius:8, borderSkipped:false
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'#F0F0F0'},ticks:{callback:v=>'S/ '+v}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+
+  // Donut semanal
+  if(charts.weekDonut) charts.weekDonut.destroy();
+  charts.weekDonut = new Chart(document.getElementById('chartWeekDonut'),{
+    type:'doughnut',
+    data:{labels:wLabels,datasets:[{
+      data:wVals, backgroundColor:[CAFE,'#A67C52',DORADO,'#8B5E3C'],
+      borderColor:'white', borderWidth:3, hoverOffset:6
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:11},padding:12}},
+        tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)} (${(ctx.raw/weekTotal*100).toFixed(1)}%)`}}
+      },
+      cutout:'58%'
+    }
+  });
+}
+
+// ── DETALLE ───────────────────────────────────────────────────────────────
+function renderDetalle(entries) {
+  const sorted = [...entries].sort((a,b)=>a.fecha.localeCompare(b.fecha)||a.turno.localeCompare(b.turno));
+  if(!sorted.length){ document.getElementById('detalleTable').innerHTML='<div class="empty">Sin registros.</div>'; return; }
+
+  let html = `<table class="detail-table">
+    <thead><tr>
+      <th>Fecha</th><th>Responsable</th><th>Turno</th>
+      <th style="text-align:right">VISA</th>
+      <th style="text-align:right">Efectivo</th>
+      <th style="text-align:right">Total</th>
+    </tr></thead><tbody>`;
+  sorted.forEach(e => {
+    const [,m,d]=e.fecha.split('-');
+    const tag = e.turno==='AM'?'<span class="tag-am">AM</span>':'<span class="tag-pm">PM</span>';
+    html += `<tr>
+      <td>${d}/${m}</td><td>${e.responsable}</td><td>${tag}</td>
+      <td class="num">${fmt(e.visa)}</td>
+      <td class="num">${e.efectivo>0?fmt(e.efectivo):'—'}</td>
+      <td class="num"><strong>${fmt(e.total)}</strong></td>
+    </tr>`;
+  });
+  const tv=sorted.reduce((s,e)=>s+e.visa,0);
+  const te=sorted.reduce((s,e)=>s+e.efectivo,0);
+  const tt=sorted.reduce((s,e)=>s+e.total,0);
+  html += `<tr style="background:var(--cafe);color:var(--dorado);font-weight:700">
+    <td colspan="3">TOTAL</td>
+    <td style="text-align:right">${fmt(tv)}</td>
+    <td style="text-align:right">${fmt(te)}</td>
+    <td style="text-align:right">${fmt(tt)}</td>
+  </tr></tbody></table>`;
+  document.getElementById('detalleTable').innerHTML = html;
+}
+
+// ── INIT + AUTO-REFRESH ───────────────────────────────────────────────────
+loadData();
+setInterval(loadData, 60000); // refresca cada 60 segundos
+</script>
+</body>
+</html>
