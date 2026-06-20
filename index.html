@@ -277,7 +277,7 @@ function showPanel(id, btn) {
 // ── FETCH + RENDER ────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const r = await fetch('/api/ventas');
+    const r = await fetch('/api/ventas?t=' + Date.now());
     if(!r.ok) throw new Error('Error '+r.status);
     const { entries } = await r.json();
     allEntries = entries.filter(e => e.fecha && e.responsable);
